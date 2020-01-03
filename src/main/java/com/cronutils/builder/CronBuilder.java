@@ -13,10 +13,7 @@
 
 package com.cronutils.builder;
 
-import java.util.ArrayList;
-import java.util.EnumMap;
-import java.util.Map;
-
+import com.cronutils.model.CompositeCron;
 import com.cronutils.model.Cron;
 import com.cronutils.model.SingleCron;
 import com.cronutils.model.definition.CronDefinition;
@@ -24,23 +21,28 @@ import com.cronutils.model.field.CronField;
 import com.cronutils.model.field.CronFieldName;
 import com.cronutils.model.field.constraint.FieldConstraints;
 import com.cronutils.model.field.expression.FieldExpression;
+import com.cronutils.model.field.expression.FieldExpressionFactory;
 import com.cronutils.model.field.expression.visitor.ValidationFieldExpressionVisitor;
+import com.cronutils.model.time.ExecutionTime;
 import com.cronutils.utils.VisibleForTesting;
 
-import static com.cronutils.model.field.CronFieldName.DAY_OF_MONTH;
-import static com.cronutils.model.field.CronFieldName.DAY_OF_WEEK;
-import static com.cronutils.model.field.CronFieldName.DAY_OF_YEAR;
-import static com.cronutils.model.field.CronFieldName.HOUR;
-import static com.cronutils.model.field.CronFieldName.MINUTE;
-import static com.cronutils.model.field.CronFieldName.MONTH;
-import static com.cronutils.model.field.CronFieldName.SECOND;
-import static com.cronutils.model.field.CronFieldName.YEAR;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.util.*;
+import java.util.stream.Collectors;
+
+import static com.cronutils.model.field.CronFieldName.*;
 import static com.cronutils.utils.Preconditions.checkState;
 
 public class CronBuilder {
 
     private final Map<CronFieldName, CronField> fields = new EnumMap<>(CronFieldName.class);
     private final CronDefinition definition;
+    private Optional<ZonedDateTime> start = Optional.empty();
+    private final Map<CronFieldName, CronField> startFields = new EnumMap<>(CronFieldName.class);
+    private Optional<ZonedDateTime> end = Optional.empty();
+    private final Map<CronFieldName, CronField> endFields = new EnumMap<>(CronFieldName.class);
+    private final Set<Map<CronFieldName, CronField>> setOfFields = new LinkedHashSet<>();
 
     private CronBuilder(final CronDefinition definition) {
         this.definition = definition;
@@ -82,8 +84,45 @@ public class CronBuilder {
         return addField(SECOND, expression);
     }
 
+    public CronBuilder withStart(final Date date) {
+        start = Optional.of(ZonedDateTime.ofInstant(date.toInstant(),
+            ZoneId.systemDefault()));
+        return this;
+    }
+
+    public CronBuilder withEnd(final Date date) {
+        end = Optional.of(ZonedDateTime.ofInstant(date.toInstant(),
+            ZoneId.systemDefault()));
+        return this;
+    }
+
     public Cron instance() {
-        return new SingleCron(definition, new ArrayList<>(fields.values())).validate();
+        if (start.isPresent() || end.isPresent()) {
+            split();
+            return new CompositeCron(setOfFields.stream()
+                .map(fiels -> new SingleCron(definition, new ArrayList<>(fields.values())))
+                .collect(Collectors.toList()));
+        } else {
+            return new SingleCron(definition, new ArrayList<>(fields.values())).validate();
+        }
+    }
+
+    private void split() {
+        Cron primal = new SingleCron(definition, new ArrayList<>(fields.values())).validate();
+        ExecutionTime forCron = ExecutionTime.forCron(primal);
+        if (start.isPresent()) {
+
+        }
+        if (end.isPresent()) {
+
+        }
+        ZonedDateTime firstExecutionTime = forCron.nextExecution(start.get())
+            .orElseThrow(()-> new IllegalArgumentException("Invalid start time/end time"));
+        ZonedDateTime lastExecutionTime = forCron.lastExecution(end.get())
+            .orElseThrow(()-> new IllegalArgumentException("Invalid start time/end time"));
+
+
+
     }
 
     @VisibleForTesting

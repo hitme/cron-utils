@@ -191,6 +191,12 @@ public class CronDefinitionBuilderTest {
     }
 
     @Test
+    public void testSplitCrons() {
+
+    }
+
+
+    @Test
     public void testSpringSchedule(){
         CronDefinition cronDefinition = CronDefinitionBuilder.instanceDefinitionFor(CronType.SPRING);
         CronBuilder builder = CronBuilder.cron(cronDefinition)

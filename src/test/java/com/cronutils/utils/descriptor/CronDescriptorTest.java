@@ -84,6 +84,7 @@ public class CronDescriptorTest {
         final List<CronField> results = new ArrayList<>();
         results.add(new CronField(CronFieldName.MINUTE, expression, nullFieldConstraints));
         results.add(new CronField(CronFieldName.HOUR, new On(new IntegerFieldValue(hour)), nullFieldConstraints));
+        System.out.println(expression.asString());
         assertEquals(String.format("every minute between %s:%02d and %s:%02d", hour, start, hour, end), descriptor.describe(new SingleCron(mockDefinition, results)));
     }
 
