@@ -28,6 +28,7 @@ import com.cronutils.utils.VisibleForTesting;
 
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -121,8 +122,16 @@ public class CronBuilder {
         ZonedDateTime lastExecutionTime = forCron.lastExecution(end.get())
             .orElseThrow(()-> new IllegalArgumentException("Invalid start time/end time"));
 
+        long yearsGap = ChronoUnit.YEARS.between(firstExecutionTime, lastExecutionTime);
+        long monthsGap = ChronoUnit.MONTHS.between(firstExecutionTime, lastExecutionTime);
+        long weeksGap = ChronoUnit.WEEKS.between(firstExecutionTime, lastExecutionTime);
+        long daysGap = ChronoUnit.DAYS.between(firstExecutionTime, lastExecutionTime);
+        long hoursGap = ChronoUnit.HOURS.between(firstExecutionTime, lastExecutionTime);
+        long minutesGap = ChronoUnit.MINUTES.between(firstExecutionTime, lastExecutionTime);
 
+        if (yearsGap > 1) {
 
+        }
     }
 
     @VisibleForTesting
