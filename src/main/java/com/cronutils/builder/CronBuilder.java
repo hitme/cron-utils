@@ -21,7 +21,7 @@ import com.cronutils.model.field.CronField;
 import com.cronutils.model.field.CronFieldName;
 import com.cronutils.model.field.constraint.FieldConstraints;
 import com.cronutils.model.field.definition.FieldDefinition;
-import com.cronutils.model.field.expression.Always;
+import com.cronutils.model.field.expression.Every;
 import com.cronutils.model.field.expression.FieldExpression;
 import com.cronutils.model.field.expression.FieldExpressionFactory;
 import com.cronutils.model.field.expression.visitor.ValidationFieldExpressionVisitor;
@@ -145,7 +145,7 @@ public class CronBuilder {
                 split(end.truncatedTo(ChronoUnit.DAYS).withDayOfYear(1), end);
                 endYear--;
             }
-            if (fillGap(fields, startYear, endYear, yearsGap, YEAR)) {
+            if (fillGap(fields, startYear, endYear, YEAR)) {
                 return;
             }
             setAdd(fields);
@@ -171,7 +171,7 @@ public class CronBuilder {
                 split(end.truncatedTo(ChronoUnit.DAYS).withDayOfMonth(1), end);
                 endMonth--;
             }
-            if (fillGap(fields, startMonth, endMonth, monthGap, MONTH)) {
+            if (fillGap(fields, startMonth, endMonth, MONTH)) {
                 return;
             }
             setAdd(fields);
@@ -196,7 +196,7 @@ public class CronBuilder {
                 split(end.truncatedTo(ChronoUnit.DAYS), end);
                 endDayOfMonth--;
             }
-            if (fillGap(fields, startDayOfMonth, endDayOfMonth, daysGap, DAY_OF_MONTH)) {
+            if (fillGap(fields, startDayOfMonth, endDayOfMonth, DAY_OF_MONTH)) {
                 return;
             }
             setAdd(fields);
@@ -221,7 +221,7 @@ public class CronBuilder {
                 split(end.truncatedTo(ChronoUnit.HOURS), end);
                 endHour--;
             }
-            if (fillGap(fields, startHour, endHour, hourGap, HOUR)) {
+            if (fillGap(fields, startHour, endHour, HOUR)) {
                 return;
             }
             setAdd(fields);
@@ -247,10 +247,11 @@ public class CronBuilder {
                 split(end.truncatedTo(ChronoUnit.MINUTES), end);
                 endMinute--;
             }
-            if (fillGap(fields, startMinute, endMinute, minuteGap, MINUTE)) {
+            if (fillGap(fields, startMinute, endMinute, MINUTE)) {
                 return;
             }
             setAdd(fields);
+            return;
         }
         addField(fields, MINUTE, FieldExpressionFactory.on(start.getMinute()));
     }
@@ -259,19 +260,32 @@ public class CronBuilder {
         return setOfFields.add(fields);
     }
 
-    private boolean fillGap(Map<CronFieldName, CronField> fields, int start, int end, int gap,
-        CronFieldName name) {
+    private boolean fillGap(Map<CronFieldName, CronField> fields, int start, int end, CronFieldName name) {
+        CronField field = this.fields.get(name);
+        int gap = end - start;
         if (gap > 1) {
-            addField(fields, name, FieldExpressionFactory.between(start, end));
+            if (null != field && field.getExpression() instanceof Every) {
+                Every every = (Every)field.getExpression();
+                addField(fields, name, new Every(FieldExpressionFactory.between(start, end), every.getPeriod()));
+            } else {
+                addField(fields, name, FieldExpressionFactory.between(start, end));
+            }
         } else if (gap > 0) {
-            addField(fields, name, FieldExpressionFactory.on(start));
+            if (null != field && field.getExpression() instanceof Every) {
+                Every every = (Every)field.getExpression();
+                addField(fields, name, new Every(FieldExpressionFactory.on(start), every.getPeriod()));
+            } else {
+                addField(fields, name, FieldExpressionFactory.on(start));
+            }
         } else {
             return true;
         }
+/*
         CronField field = fields.get(name);
         if ((field.getExpression() instanceof Always)) {
             return true;
         }
+*/
         return false;
     }
 
